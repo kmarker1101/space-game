@@ -108,6 +108,22 @@
           (assoc :current-planet nil)
           (log-message (str "Jumped to system " new-system))))))
 
+(defmethod execute-command "explore"
+  [game-state {:keys [args]}]
+  (if-let [planet-name (first args)]
+    (if-let [planet (first (filter #(= (str/lower-case (:name %)) 
+                                      (str/lower-case planet-name))
+                                  (get-in game-state [:current-system :planets])))]
+      (let [planet-data (llm/generate-planet-name 
+                         (:name planet)
+                         (get-in game-state [:current-system :name]))]
+        (println (display-planet-info planet-data))
+        (-> game-state
+            (assoc :current-planet planet-data)
+            (log-message (str "Explored planet " (:name planet)))))
+      (log-message game-state "Planet not found in current system."))
+    (log-message game-state "Please specify a planet to explore.")))
+
 (defmethod execute-command "help"
   [game-state _]
   (println "\nAvailable Commands:")
